@@ -18,3 +18,4 @@ __pycache__/
 *.db
 .chroma/
 chroma_db/
+faiss_cache/

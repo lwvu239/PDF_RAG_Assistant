@@ -3,7 +3,8 @@ bitsandbytes==0.46.0
 accelerate==1.7.0
 langchain==0.3.25
 langchainhub==0.1.21
-langchain-chroma==0.2.4
+pymupdf==1.25.0
+faiss-cpu==1.8.0
 langchain_experimental==0.3.4
 langchain-community==0.3.24
 langchain-huggingface==0.2.0
@@ -13,3 +14,4 @@ streamlit==1.36.0
 torch
 bitsandbytes
 accelerate
+langchain_google_genai

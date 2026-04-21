@@ -10,6 +10,8 @@ def format_docs(docs):
 
 
 def build_rag_chain(retriever):
+
+
     prompt = ChatPromptTemplate.from_template(
         "You are an assistant for question-answering tasks. "
         "Use the following pieces of retrieved context to answer the question. "
@@ -25,9 +27,9 @@ def build_rag_chain(retriever):
             "context": retriever | format_docs,
             "question": RunnablePassthrough()
         }
-        | prompt
-        | st.session_state.llm
-        | StrOutputParser()
+        | prompt               # Ghép context + question vào prompt template
+        | st.session_state.llm # Gửi prompt đến LLM (Gemini) để sinh câu trả lời
+        | StrOutputParser()    # Chuyển output ChatMessage thành string
     )
 
     return rag_chain
