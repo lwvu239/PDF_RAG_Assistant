@@ -1,80 +1,183 @@
-# PDF RAG Assistant
+# 📚 PDF RAG Assistant
 
-PDF RAG Assistant là một ứng dụng Hỏi & Đáp (Q&A) dựa trên tài liệu PDF, sử dụng kỹ thuật **RAG** (Retrieval-Augmented Generation). Ứng dụng cho phép người dùng tải lên các tệp PDF và trò chuyện trực tiếp với AI để trích xuất, tổng hợp và tìm kiếm thông tin từ nội dung tài liệu một cách chính xác.
+<div align="center">
 
-## 🚀 Tính năng nổi bật
-- **Giao diện thân thiện trực quan:** Xây dựng bằng [Streamlit](https://streamlit.io/).
-- **Xử lý PDF tự động:** Trích xuất văn bản từ tài liệu PDF.
-- **Lưu trữ Vector mạnh mẽ:** Sử dụng ChromaDB để phân chia văn bản (chunking) và tìm kiếm thông tin liên quan nhanh chóng.
-- **Hỗ trợ Local LLM:** Tích hợp mô hình ngôn ngữ lớn và mô hình nhúng (Embedding) thông qua Hugging Face (Transformers, Accelerate, BitsAndBytes).
+**Trò chuyện thông minh với tài liệu PDF bằng AI**
 
-## 🗂️ Cấu trúc thư mục
+[![Python](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white)](https://python.org)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.36-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io)
+[![LangChain](https://img.shields.io/badge/LangChain-0.3-1C3C3C?logo=langchain&logoColor=white)](https://langchain.com)
+[![Gemini](https://img.shields.io/badge/Gemini_2.5_Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
 
-```text
-rag_llm/
-├── app.py                     # File chạy ứng dụng chính (Streamlit UI)
-├── requirements.txt           # Danh sách các thư viện phụ thuộc
-├── .env                       # File chứa các biến môi trường
-├── models/
-│   ├── embedding_model.py     # Cấu hình và tải mô hình Embedding
-│   └── llm_model.py           # Cấu hình và tải mô hình LLM (với lượng tử hóa)
-├── processing/
-│   ├── pdf_processor.py       # Logic xử lý và đọc file PDF
-│   └── vector_store.py        # Logic tạo và quản lý Vector Database (Chroma)
-├── rag/
-│   └── rag_chain.py           # Thiết lập RAG pipeline (Kết nối LLM và Retriever)
-└── utils/                     
-    └── session_state.py       # Quản lý trạng thái phiên làm việc (Session state) của Streamlit
+</div>
+
+---
+
+PDF RAG Assistant là ứng dụng Q&A dựa trên kỹ thuật **RAG** (Retrieval-Augmented Generation). Upload tài liệu PDF và trò chuyện trực tiếp với AI để trích xuất, tổng hợp và tìm kiếm thông tin từ nội dung tài liệu một cách chính xác.
+
+## ✨ Tính năng
+
+| Tính năng | Mô tả |
+|---|---|
+| 🤖 **RAG Pipeline** | Trả lời chính xác dựa trên nội dung tài liệu, không bịa đặt |
+| 📄 **Multi-PDF Upload** | Upload và xử lý nhiều file PDF cùng lúc |
+| ⚡ **Streaming Response** | Hiển thị câu trả lời từng token (real-time) |
+| 🧠 **Conversation Memory** | Nhớ ngữ cảnh hội thoại (5 lượt gần nhất) |
+| 📋 **Source Attribution** | Hiển thị nguồn tham khảo (file, trang) cho mỗi câu trả lời |
+| 💾 **Smart Cache** | Cache embeddings — xử lý lại file cũ < 1 giây |
+| 🔍 **MMR Search** | Maximum Marginal Relevance cho kết quả đa dạng |
+| 🌐 **Bilingual** | Hỗ trợ hỏi đáp tiếng Việt và tiếng Anh |
+| 🎨 **Premium UI** | Giao diện hiện đại với dark mode, gradient, animations |
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Streamlit UI (app.py)                 │
+│   ┌──────────┐  ┌──────────┐  ┌──────────────────────┐  │
+│   │ Upload   │  │ Chat     │  │ Source Display        │  │
+│   │ Multi-PDF│  │ Streaming│  │ (File, Page, Preview) │  │
+│   └────┬─────┘  └────┬─────┘  └──────────────────────┘  │
+├────────┼──────────────┼──────────────────────────────────┤
+│        ▼              ▼                                  │
+│   ┌──────────┐  ┌──────────────────────────┐             │
+│   │ PDF      │  │ RAG Chain (rag_chain.py) │             │
+│   │ Processor│  │  ┌─────────┐ ┌────────┐ │             │
+│   │ + Clean  │  │  │ Memory  │ │ Prompt │ │             │
+│   │ + Split  │  │  │ (k=5)   │ │ Engine │ │             │
+│   └────┬─────┘  │  └─────────┘ └────────┘ │             │
+│        │        └──────┬───────────────────┘             │
+│        ▼               │                                 │
+│   ┌──────────┐         ▼                                 │
+│   │ FAISS    │◄──── Retriever (MMR, k=5)                 │
+│   │ Vector DB│                                           │
+│   │ + Cache  │    ┌───────────────────┐                  │
+│   └──────────┘    │ Gemini 2.5 Flash  │                  │
+│                   │ (LLM via API)     │                  │
+│                   └───────────────────┘                  │
+├─────────────────────────────────────────────────────────┤
+│  Embedding: paraphrase-multilingual-mpnet-base-v2       │
+│  Config: config.py | Logger: utils/logger.py            │
+└─────────────────────────────────────────────────────────┘
 ```
 
-## 🛠️ Công nghệ sử dụng
-- **Giao diện (Frontend):** Streamlit
-- **Framework LLM:** LangChain
-- **Xử lý tài liệu:** PyPDF
-- **Vector Database:** Chroma (langchain-chroma)
-- **Deep Learning / Models:** HuggingFace Transformers, PyTorch, Accelerate, BitsAndBytes
+## 📁 Cấu trúc thư mục
 
-## ⚙️ Hướng dẫn cài đặt
+```text
+PDF_RAG_Assistant/
+├── app.py                         # Ứng dụng chính (Streamlit UI)
+├── config.py                      # Cấu hình tập trung (models, RAG params)
+├── requirements.txt               # Dependencies
+├── .env                           # Biến môi trường (API keys) — git ignored
+├── .env.example                   # Template cho .env
+│
+├── models/
+│   ├── __init__.py
+│   ├── embedding_model.py         # Mô hình Embedding (multilingual, CUDA/CPU)
+│   └── llm_model.py               # Mô hình LLM (Gemini 2.5 Flash, streaming)
+│
+├── processing/
+│   ├── __init__.py
+│   ├── pdf_processor.py           # Xử lý PDF (multi-file, text cleaning, chunking)
+│   └── vector_store.py            # FAISS Vector DB (cache, MMR, merge)
+│
+├── rag/
+│   ├── __init__.py
+│   └── rag_chain.py               # RAG pipeline (memory, source attribution, prompt)
+│
+├── utils/
+│   ├── __init__.py
+│   ├── session_state.py           # Quản lý session state
+│   └── logger.py                  # Logging với rotation
+│
+├── faiss_cache/                   # Cache embeddings (auto-generated)
+└── logs/                          # Log files (auto-generated)
+```
 
-1. **Clone repository này hoặc di chuyển vào thư mục dự án:**
-   ```bash
-   cd d:\AI\rag_llm
-   ```
+## 🛠️ Công nghệ
 
-2. **Cài đặt môi trường ảo (Khuyến nghị):**
-   ```bash
-   python -m venv rag_env
-   rag_env\Scripts\activate  # Đối với Windows
-   ```
+| Thành phần | Công nghệ |
+|---|---|
+| **Giao diện** | Streamlit |
+| **LLM** | Google Gemini 2.5 Flash |
+| **Framework** | LangChain |
+| **Embedding** | sentence-transformers (multilingual) |
+| **Vector DB** | FAISS |
+| **PDF Parser** | PyMuPDF |
 
-3. **Cài đặt các thư viện yêu cầu:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+## ⚙️ Cài đặt
 
-4. **Thiết lập biến môi trường:**
-   - Mở (hoặc tạo) file `.env` ở thư mục gốc của dự án.
-   - Nếu bạn dùng các API từ bên ngoài như HuggingFace Token, OpenAI API, v.v., hãy thêm vào file này:
-     ```env
-     # Ví dụ:
-     HUGGINGFACEHUB_API_TOKEN="your_huggingface_token_here"
-     ```
+### 1. Clone & tạo môi trường
+
+```bash
+git clone <repository-url>
+cd PDF_RAG_Assistant
+
+# Tạo virtual environment
+python -m venv rag_env
+
+# Activate (Windows)
+rag_env\Scripts\activate
+
+# Activate (macOS/Linux)
+source rag_env/bin/activate
+```
+
+### 2. Cài dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Thiết lập API key
+
+```bash
+# Copy file mẫu
+cp .env.example .env
+
+# Mở .env và thêm Google API key
+# GOOGLE_API_KEY=your_api_key_here
+```
+
+> 💡 Lấy API key tại: [Google AI Studio](https://aistudio.google.com/apikey)
+
+### 4. Chạy ứng dụng
+
+```bash
+streamlit run app.py
+```
+
+Ứng dụng sẽ mở tại `http://localhost:8501`
 
 ## 🖥️ Hướng dẫn sử dụng
 
-1. **Khởi chạy ứng dụng:**
-   Mở terminal và chạy lệnh sau:
-   ```bash
-   streamlit run app.py
-   ```
+1. **Upload PDF** — Chọn 1 hoặc nhiều file PDF ở sidebar
+2. **Xử lý** — Nhấn "🚀 Xử lý PDF" và đợi hoàn tất
+3. **Hỏi đáp** — Nhập câu hỏi trong khung chat
+4. **Xem nguồn** — Mở expander "📋 Nguồn tham khảo" dưới mỗi câu trả lời
 
-2. **Các bước trên giao diện:**
-   - Khi giao diện mở lên trên trình duyệt (thường ở địa chỉ `http://localhost:8501`), đợi hệ thống tải mô hình (LLM & Embeddings).
-   - Truy cập thanh Sidebar (⚙️ Cài đặt) ở góc trái màn hình.
-   - Nhấn **Upload tài liệu PDF** để tải file của bạn lên.
-   - Nhấn **🔄 Xử lý PDF** để hệ thống đọc, chia nhỏ (chunking) và đưa vào Vector Database.
-   - Sau khi xử lý hoàn tất, bạn có thể bắt đầu nhắn tin vào khung chat ở màn hình chính để hỏi đáp về nội dung tài liệu.
+## ⚙️ Tùy chỉnh cấu hình
 
-## 📝 Lưu ý
-- Việc tải mô hình ban đầu (LLM và Embeddings) có thể mất một chút thời gian tùy thuộc vào cấu hình phần cứng của bạn và dung lượng của các model HuggingFace.
-- Nếu ứng dụng chạy chậm, vui lòng kiểm tra việc tối ưu hóa với GPU (đã được hỗ trợ qua thư viện `bitsandbytes` và `accelerate`).
+Tất cả tham số được quản lý trong `config.py` hoặc override qua `.env`:
+
+| Biến | Mặc định | Mô tả |
+|---|---|---|
+| `LLM_MODEL_NAME` | `gemini-2.5-flash` | Model LLM |
+| `LLM_TEMPERATURE` | `0.3` | Độ sáng tạo (0-1) |
+| `CHUNK_SIZE` | `1000` | Kích thước chunk (ký tự) |
+| `CHUNK_OVERLAP` | `200` | Overlap giữa chunks |
+| `RETRIEVER_K` | `5` | Số chunks retrieve |
+| `MEMORY_WINDOW_SIZE` | `5` | Số lượt chat nhớ |
+
+## 🔧 Troubleshooting
+
+| Vấn đề | Giải pháp |
+|---|---|
+| `GOOGLE_API_KEY not configured` | Kiểm tra file `.env` có chứa API key đúng |
+| Embedding chậm | Cài PyTorch với CUDA: `pip install torch --index-url https://download.pytorch.org/whl/cu121` |
+| PDF không đọc được | Đảm bảo PDF không bị encrypt/password protect |
+| Lỗi memory | Giảm `CHUNK_SIZE` hoặc upload file nhỏ hơn |
+
+## 📝 License
+
+MIT License

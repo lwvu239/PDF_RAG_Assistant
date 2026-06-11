@@ -1,21 +1,45 @@
-# Environments
+# ═══════════════════════════════════════════════
+# PDF RAG Assistant — .gitignore
+# ═══════════════════════════════════════════════
+
+# ─── Environments ─────────────────────────────
 rag_env/
 env/
 venv/
+.venv/
 ENV/
 
-# Python
+# ─── Python ───────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
+*.egg-info/
+dist/
+build/
 
-# Environment variables
+# ─── Environment variables ───────────────────
 .env
 
-# Large files / Data
+# ─── Data / Cache ─────────────────────────────
 *.pdf
 *.sqlite3
 *.db
 .chroma/
 chroma_db/
 faiss_cache/
+
+# ─── Logs ─────────────────────────────────────
+logs/
+*.log
+
+# ─── IDE ──────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── OS ───────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
